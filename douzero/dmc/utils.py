@@ -152,12 +152,18 @@ def act(i, device, batch_queues, model, flags):
                 if size[p] > T:
                     # print(p, "epr", torch.stack([torch.tensor(ndarr, device="cpu") for ndarr in episode_return_buf[p][:T]]),)
                     batch_queues[p].put({
-                        "done": torch.stack([torch.tensor(ndarr, device="cpu") for ndarr in done_buf[p][:T]]),
-                        "episode_return": torch.stack([torch.tensor(ndarr, device="cpu") for ndarr in episode_return_buf[p][:T]]),
-                        "target": torch.stack([torch.tensor(ndarr, device="cpu") for ndarr in target_buf[p][:T]]),
-                        "obs_z": torch.stack([torch.tensor(ndarr, device="cpu") for ndarr in obs_z_buf[p][:T]]),
-                        "obs_x_batch": torch.stack([torch.tensor(ndarr, device="cpu") for ndarr in obs_x_batch_buf[p][:T]]),
-                        "obs_type": torch.stack([torch.tensor(ndarr, device="cpu") for ndarr in type_buf[p][:T]])
+                        #"done": torch.stack([torch.tensor(ndarr, device="cpu") for ndarr in done_buf[p][:T]]),
+                        #"episode_return": torch.stack([torch.tensor(ndarr, device="cpu") for ndarr in episode_return_buf[p][:T]]),
+                        #"target": torch.stack([torch.tensor(ndarr, device="cpu") for ndarr in target_buf[p][:T]]),
+                        #"obs_z": torch.stack([torch.tensor(ndarr, device="cpu") for ndarr in obs_z_buf[p][:T]]),
+                        #"obs_x_batch": torch.stack([torch.tensor(ndarr, device="cpu") for ndarr in obs_x_batch_buf[p][:T]]),
+                        #"obs_type": torch.stack([torch.tensor(ndarr, device="cpu") for ndarr in type_buf[p][:T]])
+                        "done": torch.stack([ndarr.detach().clone().to("cpu") if torch.is_tensor(ndarr) else torch.tensor(ndarr, device="cpu") for ndarr in done_buf[p][:T]]),
+                        "episode_return": torch.stack([ndarr.detach().clone().to("cpu") if torch.is_tensor(ndarr) else torch.tensor(ndarr, device="cpu") for ndarr in episode_return_buf[p][:T]]),
+                        "target": torch.stack([ndarr.detach().clone().to("cpu") if torch.is_tensor(ndarr) else torch.tensor(ndarr, device="cpu") for ndarr in target_buf[p][:T]]),
+                        "obs_z": torch.stack([ndarr.detach().clone().to("cpu") if torch.is_tensor(ndarr) else torch.tensor(ndarr, device="cpu") for ndarr in obs_z_buf[p][:T]]),
+                        "obs_x_batch": torch.stack([ndarr.detach().clone().to("cpu") if torch.is_tensor(ndarr) else torch.tensor(ndarr, device="cpu") for ndarr in obs_x_batch_buf[p][:T]]),
+                        "obs_type": torch.stack([ndarr.detach().clone().to("cpu") if torch.is_tensor(ndarr) else torch.tensor(ndarr, device="cpu") for ndarr in type_buf[p][:T]]),
                     })
                     done_buf[p] = done_buf[p][T:]
                     episode_return_buf[p] = episode_return_buf[p][T:]

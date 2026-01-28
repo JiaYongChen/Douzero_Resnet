@@ -140,7 +140,7 @@ def train(flags):
     for device in device_iterator:
         num_actors = flags.num_actors
         for i in range(flags.num_actors):
-            actor = mp.Process(
+            actor = ctx.Process(
                 target=act,
                 args=(i, device, batch_queues, models[device], flags))
             # actor.setDaemon(True)
@@ -195,8 +195,25 @@ def train(flags):
         # Save the weights for evaluation purpose
         for position in ['landlord', 'landlord_up', 'landlord_down', 'bidding']: # ['landlord', 'landlord_up', 'landlord_down']
             model_weights_dir = os.path.expandvars(os.path.expanduser(
-                '%s/%s/%s' % (flags.savedir, flags.xpid, "general_"+position+'_'+str(frames)+'.ckpt')))
+                '%s/%s/%s' % (flags.savedir, flags.xpid, "general_"+position+'_weights_'+str(frames)+'.ckpt')))
             torch.save(learner_model.get_model(position).state_dict(), model_weights_dir)
+        
+        # Keep only the latest 5 checkpoints for each position, delete older ones
+        checkpoint_dir = os.path.expandvars(os.path.expanduser('%s/%s' % (flags.savedir, flags.xpid)))
+        for position in ['landlord', 'landlord_up', 'landlord_down', 'bidding']:
+            pattern = "general_" + position + "_weights_"
+            ckpt_files = [f for f in os.listdir(checkpoint_dir) if f.startswith(pattern) and f.endswith('.ckpt')]
+            # Sort by frame number (extract number from filename)
+            ckpt_files.sort(key=lambda x: int(x.replace(pattern, '').replace('.ckpt', '')))
+            # Delete older files, keep only the latest 5
+            if len(ckpt_files) > 5:
+                for old_file in ckpt_files[:-5]:
+                    old_path = os.path.join(checkpoint_dir, old_file)
+                    try:
+                        os.remove(old_path)
+                        log.info('Deleted old checkpoint: %s', old_path)
+                    except OSError as e:
+                        log.warning('Failed to delete old checkpoint %s: %s', old_path, e)
 
     fps_log = []
     timer = timeit.default_timer
